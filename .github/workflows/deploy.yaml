@@ -1,0 +1,23 @@
+name: deploy
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # v3.5.2
+      - name: upload
+        uses: actions/upload-pages-artifact@64bcae551a7b18bcb9a09042ddf1960979799187 # v1.0.8
+        with:
+          path: './'
+      - name: deploy
+        id: deployment
+        uses: actions/deploy-pages@af48cf94a42f2c634308b1c9dc0151830b6f190a # v2.0.1
+

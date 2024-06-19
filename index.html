@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔎</text></svg>">
+    <title>Offline unicode character inspector</title>
+<style>
+body {
+  width: 56rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+h1, p {
+  margin: 0;
+}
+
+textarea {
+  width: 32rem;
+  height: 6ch;
+}
+
+button {
+  max-width: fit-content;
+}
+
+table {
+  border-collapse: collapse;
+  border: 2px solid black;
+}
+
+th, td {
+  border: 1px solid black;
+  width: 4rem;
+}
+
+.wide {
+  width: 16rem;
+}
+</style>
+  </head>
+  <body>
+    <h1>Unicode inspector</h1>
+    <p>Low-fi and entirely offline - no data is submitted to any server</p>
+    <textarea id="the-textarea"></textarea>
+
+    <p>
+      <button id="the-button">Submit</button>
+      or cmd+enter / ctrl+enter
+    </p>
+
+    <table>
+      <thead>
+      <tr id="heads">
+        <th>Character</th>
+        <th>Codepoint</th>
+        <th class="wide">Name</th>
+        <th class="wide">Extra</th>
+      </tr>
+      </thead>
+      <tbody id="the-table">
+      </tbody>
+    </table>
+    <script>
+const a = fetch('./UnicodeData.txt')
+  .then(res => res.text())
+  .then(lines => lines.split('\n'))
+  .then(lines => lines.map(l => {
+    const data = l.split(';');
+    const codepoint = data[0];
+    const codepointN = parseInt(data[0], 16);
+    const name = data[1];
+    const extra = data[10];
+    return [codepointN, codepoint, name, extra];
+  }));
+
+const onSubmit = () => {
+  const tbody = document.getElementById('the-table');
+
+  while (tbody.firstChild) {
+    tbody.removeChild(tbody.lastChild);
+  }
+
+  a.then(unicodeData => {
+    const data = document.getElementById('the-textarea').value;
+
+    const seenChars = new Set();
+
+    for (const char of data) {
+      if (seenChars.has(char)) continue;
+      seenChars.add(char);
+      const row = document.createElement('tr');
+      const codepoint = char.codePointAt(0);
+      const match = unicodeData.find(u => u[0] === codepoint);
+
+      const rowItems = [char, ...match.slice(1, 4)];
+
+      for (const item of rowItems) {
+        const td = document.createElement('td');
+        row.appendChild(td);
+        td.innerText = item;
+      }
+
+      tbody.appendChild(row);
+    }
+  });
+};
+
+const onKeydown = (e) => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    onSubmit();
+  }
+};
+
+document.getElementById('the-button').addEventListener('click', onSubmit);
+document.getElementById('the-textarea').addEventListener('keydown', onKeydown);
+    </script>
+  </body>
+</html>
