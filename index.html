@@ -30,15 +30,26 @@ button {
 table {
   border-collapse: collapse;
   border: 2px solid black;
+  table-layout: auto;
 }
 
 th, td {
   border: 1px solid black;
-  width: 4rem;
+}
+
+td {
+  font-family: monospace;
 }
 
 .wide {
-  width: 16rem;
+  width: 32%;
+}
+.u16 {
+  width: 9ch;
+}
+
+.u8 {
+  width: 11ch;
 }
 </style>
   </head>
@@ -59,6 +70,8 @@ th, td {
         <th>Codepoint</th>
         <th class="wide">Name</th>
         <th class="wide">Extra</th>
+        <th class="u16">UTF-16</th>
+        <th class="u8">UTF-8</th>
       </tr>
       </thead>
       <tbody id="the-table">
@@ -76,6 +89,20 @@ const a = fetch('./UnicodeData.txt')
     const extra = data[10];
     return [codepointN, codepoint, name, extra];
   }));
+
+const calcU16 = (s) => {
+  const out = [];
+  for (let i = 0; i < s.length * 3; i++) {
+    const x = s.charCodeAt(i);
+    if (isNaN(x)) break;
+    out.push(zeropad(x.toString(16), 4));
+  }
+  return out;
+};
+
+const textencoder = new TextEncoder();
+
+const zeropad = (s, n) => '0'.repeat(Math.max(0, n - s.length)) + s;
 
 const onSubmit = () => {
   const tbody = document.getElementById('the-table');
@@ -96,7 +123,12 @@ const onSubmit = () => {
       const codepoint = char.codePointAt(0);
       const match = unicodeData.find(u => u[0] === codepoint);
 
-      const rowItems = [char, ...match.slice(1, 4)];
+      const u16 = calcU16(char).join(' ');
+      const u8 = Array.from(textencoder.encode(char))
+        .map(b => zeropad(b.toString(16), 2))
+        .join(' ');
+
+      const rowItems = [char, ...match.slice(1, 4), u16, u8];
 
       for (const item of rowItems) {
         const td = document.createElement('td');
