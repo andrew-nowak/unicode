@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔎</text></svg>">
     <title>Offline unicode character inspector</title>
-<style>
+    <style>
 body {
   width: 56rem;
   margin: 0 auto;
@@ -21,10 +21,6 @@ h1, p {
 textarea {
   width: 32rem;
   height: 6ch;
-}
-
-button {
-  max-width: fit-content;
 }
 
 table {
@@ -51,17 +47,16 @@ td {
 .u8 {
   width: 11ch;
 }
-</style>
+    </style>
   </head>
   <body>
     <h1>Unicode inspector</h1>
     <p>Low-fi and entirely offline - no data is submitted to any server</p>
     <textarea id="the-textarea"></textarea>
-
-    <p>
-      <button id="the-button">Submit</button>
-      or cmd+enter / ctrl+enter
-    </p>
+    <span>
+      <input type="checkbox" id="deduplicate" name="deduplicate" checked />
+      <label for="deduplicate">Hide duplicates</label>
+    </span>
 
     <table>
       <thead>
@@ -92,7 +87,7 @@ const a = fetch('./UnicodeData.txt')
 
 const calcU16 = (s) => {
   const out = [];
-  for (let i = 0; i < s.length * 3; i++) {
+  for (let i = 0; i < s.length; i++) {
     const x = s.charCodeAt(i);
     if (isNaN(x)) break;
     out.push(zeropad(x.toString(16), 4));
@@ -104,8 +99,9 @@ const textencoder = new TextEncoder();
 
 const zeropad = (s, n) => '0'.repeat(Math.max(0, n - s.length)) + s;
 
-const onSubmit = () => {
+const onInput = () => {
   const tbody = document.getElementById('the-table');
+  const deduplicate = document.getElementById('deduplicate').checked;
 
   while (tbody.firstChild) {
     tbody.removeChild(tbody.lastChild);
@@ -117,7 +113,7 @@ const onSubmit = () => {
     const seenChars = new Set();
 
     for (const char of data) {
-      if (seenChars.has(char)) continue;
+      if (deduplicate && seenChars.has(char)) continue;
       seenChars.add(char);
       const row = document.createElement('tr');
       const codepoint = char.codePointAt(0);
@@ -141,14 +137,8 @@ const onSubmit = () => {
   });
 };
 
-const onKeydown = (e) => {
-  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-    onSubmit();
-  }
-};
-
-document.getElementById('the-button').addEventListener('click', onSubmit);
-document.getElementById('the-textarea').addEventListener('keydown', onKeydown);
+document.getElementById('the-textarea').addEventListener('input', onInput);
+document.getElementById('deduplicate').addEventListener('input', onInput);
     </script>
   </body>
 </html>
