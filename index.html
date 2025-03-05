@@ -117,7 +117,7 @@ const onInput = () => {
       seenChars.add(char);
       const row = document.createElement('tr');
       const codepoint = char.codePointAt(0);
-      const match = unicodeData.find(u => u[0] === codepoint);
+      const match = unicodeData.find(u => u[0] === codepoint) ?? ['', '-', 'INVALID', 'This character doesn\'t appear to exist in unicode', '', ''];
 
       const u16 = calcU16(char).join(' ');
       const u8 = Array.from(textencoder.encode(char))
