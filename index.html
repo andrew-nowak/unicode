@@ -47,6 +47,22 @@ td {
 .u8 {
   width: 11ch;
 }
+
+#codepoint-out {
+  border: 1px solid black;
+  min-width: 3ch;
+  display: flex;
+  justify-content: center;
+}
+#codepoint-out pre {
+  margin: 0.5em;
+  font-size: 1.5em;
+}
+.inline {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+}
     </style>
   </head>
   <body>
@@ -72,6 +88,13 @@ td {
       <tbody id="the-table">
       </tbody>
     </table>
+
+    <h2>Generate unicode char</h2>
+    <label for="codepoint-entry">Input a unicode codepoint to make it render</label>
+    <span class="inline">
+      <input type="text" id="codepoint-entry" name="codepoint-entry" />
+      <span id="codepoint-out"><pre>&nbsp;</pre></span>
+    </span>
     <script>
 const a = fetch('./UnicodeData.txt')
   .then(res => res.text())
@@ -137,8 +160,24 @@ const onInput = () => {
   });
 };
 
+const onCodepoint = () => {
+  const entry = document.getElementById('codepoint-entry');
+  const out = document.getElementById('codepoint-out');
+
+  const p = document.createElement('pre');
+  p.innerHTML = '&#x' + entry.value + ';';
+
+  if (p.innerText.length < entry.value.length + 4) {
+    while (out.firstChild) {
+      out.removeChild(out.lastChild);
+    }
+    out.appendChild(p);
+  }
+};
+
 document.getElementById('the-textarea').addEventListener('input', onInput);
 document.getElementById('deduplicate').addEventListener('input', onInput);
+document.getElementById('codepoint-entry').addEventListener('input', onCodepoint);
     </script>
   </body>
 </html>
