@@ -90,7 +90,7 @@ td {
     </table>
 
     <h2>Generate unicode char</h2>
-    <label for="codepoint-entry">Input a unicode codepoint to make it render</label>
+    <label for="codepoint-entry">Input a unicode codepoint to see the character</label>
     <span class="inline">
       <input type="text" id="codepoint-entry" name="codepoint-entry" />
       <span id="codepoint-out"><pre>&nbsp;</pre></span>
@@ -98,7 +98,7 @@ td {
     <script>
 const a = fetch('./UnicodeData.txt')
   .then(res => res.text())
-  .then(lines => lines.split('\n'))
+  .then(lines => lines.trim().split('\n'))
   .then(lines => lines.map(l => {
     const data = l.split(';');
     const codepoint = data[0];
@@ -106,7 +106,26 @@ const a = fetch('./UnicodeData.txt')
     const name = data[1];
     const extra = data[10];
     return [codepointN, codepoint, name, extra];
-  }));
+  })).then(codes => {
+    const points = [];
+    const ranges = {};
+    for (let code of codes) {
+      if (code[2].startsWith('<')) {
+        const [name, position] = code[2].slice(1, -1).split(', ');
+        const range = ranges[name] ?? { name };
+        if (position === 'First') {
+          range.from = code[0];
+        } else if (position === 'Last') {
+          range.to = code[0];
+        }
+        range.extra = `Part of range from ${range.from?.toString(16)?.toUpperCase()} to ${range.to?.toString(16)?.toUpperCase()}`;
+        ranges[name] = range;
+      } else {
+        points.push(code);
+      }
+    }
+    return { points, ranges: Object.values(ranges) };
+  });
 
 const calcU16 = (s) => {
   const out = [];
@@ -121,6 +140,22 @@ const calcU16 = (s) => {
 const textencoder = new TextEncoder();
 
 const zeropad = (s, n) => '0'.repeat(Math.max(0, n - s.length)) + s;
+
+const findCodepoint = (unicodeData, codepoint) => {
+  const unicodePoints = unicodeData.points;
+  const unicodeRanges = unicodeData.ranges;
+
+  const matchedInPoints = unicodePoints.find(u => u[0] === codepoint);
+  const matchedInRanges = unicodeRanges.find(u => codepoint >= u.from && codepoint <= u.to);
+
+  if (matchedInPoints) return matchedInPoints;
+  if (matchedInRanges) {
+    const { name, extra } = matchedInRanges;
+    const unipoint = codepoint.toString(16).toUpperCase();
+    return [codepoint, unipoint, name, extra];
+  }
+  return ['', '-', 'INVALID', 'This character doesn\'t appear to exist in unicode', '', ''];
+};
 
 const onInput = () => {
   const tbody = document.getElementById('the-table');
@@ -140,7 +175,7 @@ const onInput = () => {
       seenChars.add(char);
       const row = document.createElement('tr');
       const codepoint = char.codePointAt(0);
-      const match = unicodeData.find(u => u[0] === codepoint) ?? ['', '-', 'INVALID', 'This character doesn\'t appear to exist in unicode', '', ''];
+      const match = findCodepoint(unicodeData, codepoint);
 
       const u16 = calcU16(char).join(' ');
       const u8 = Array.from(textencoder.encode(char))
@@ -165,7 +200,7 @@ const onCodepoint = () => {
   const out = document.getElementById('codepoint-out');
 
   const p = document.createElement('pre');
-  p.innerHTML = '&#x' + entry.value + ';';
+  p.innerHTML = String.fromCodePoint(parseInt(entry.value, 16));
 
   if (p.innerText.length < entry.value.length + 4) {
     while (out.firstChild) {
