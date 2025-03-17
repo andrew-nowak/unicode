@@ -110,7 +110,7 @@ const a = fetch('./UnicodeData.txt')
     const points = [];
     const ranges = {};
     for (let code of codes) {
-      if (code[2].startsWith('<')) {
+      if (code[2].startsWith('<') && code[2].includes(', ')) {
         const [name, position] = code[2].slice(1, -1).split(', ');
         const range = ranges[name] ?? { name };
         if (position === 'First') {
